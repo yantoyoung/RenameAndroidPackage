@@ -82,9 +82,12 @@ class ModAndroidManifest:
         self.root.attrib["package"] = self.new_package
 
         for i in self.root:
+            if "permission" in i.tag and \
+                ("%s.permission" % self.old_package) in i.attrib["{%s}name" % self.ns_android]:
+                i.attrib["{%s}name" % self.ns_android] = i.attrib["{%s}name" % self.ns_android].replace(self.old_package, self.new_package)
+                print i.attrib["{%s}name" % self.ns_android]
             if i.tag == "application":
                 app = i
-                break
 
         # Loop through the sub-elements for tag "application"
         for i in app:
