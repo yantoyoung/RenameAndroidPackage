@@ -6,7 +6,9 @@
 import codecs
 import os
 import re
+import shutil
 import sys
+import traceback
 import xml.dom.minidom as minidom
 
 from optparse import OptionParser
@@ -102,7 +104,20 @@ class ModAndroidManifest:
             # and rename the value to correspond to the new package name.
             if i.tag == "provider":
                 i.attrib["{%s}authorities" % self.ns_android] = i.attrib["{%s}authorities" % self.ns_android].replace(self.old_package, self.new_package)
-        
+            if i.tag == "service" and self.old_package in i.attrib["{%s}name" % self.ns_android]:
+                try:
+                    old_path = os.path.join(os.path.dirname(self.xml_path), "src", i.attrib["{%s}name" % self.ns_android].replace(".", "/") + ".java")
+                    i.attrib["{%s}name" % self.ns_android] = i.attrib["{%s}name" % self.ns_android].replace(self.old_package, self.new_package)
+                    new_path = os.path.join(os.path.dirname(self.xml_path), "src", i.attrib["{%s}name" % self.ns_android].replace(".", "/") + ".java")
+                    print old_path, new_path
+                    if not os.path.exists(os.path.dirname(new_path)):
+                        os.makedirs(os.path.dirname(new_path))
+                    shutil.move(os.path.join(os.path.dirname(self.xml_path), "src", old_path), os.path.join(os.path.dirname(self.xml_path), "src", new_path))
+                    replace_string(new_path, "package %s" % self.old_package, "package %s" % self.new_package)
+                except:
+                    traceback.print_exc(file=sys.stdout)
+                    pass
+
     def format_xml(self):
         rough_string = ET.tostring(self.root, 'utf-8')
         reparsed = minidom.parseString(rough_string)
